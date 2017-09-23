@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace MessageBoardBackend
 {
@@ -28,6 +26,8 @@ namespace MessageBoardBackend
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
+            services.AddDbContext<ApiContext>(opt => opt.UseInMemoryDatabase());
+
             services.AddCors(options => options.AddPolicy("Cors", builder =>
             {
                 builder
@@ -45,6 +45,24 @@ namespace MessageBoardBackend
             loggerFactory.AddDebug();
             app.UseCors("Cors");
             app.UseMvc();
+
+            SeedData(app.ApplicationServices.GetService<ApiContext>());
+        }
+
+        public void SeedData(ApiContext context)
+        {
+            context.Messages.Add(new Models.Message
+            {
+                Owner = "John",
+                Text = "hello"
+            });
+            context.Messages.Add(new Models.Message
+            {
+                Owner = "Tim",
+                Text = "Hi"
+            });
+
+            context.SaveChanges();
         }
     }
 }
