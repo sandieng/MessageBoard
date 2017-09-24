@@ -62,6 +62,15 @@ namespace MessageBoardBackend
                 Text = "Hi"
             });
 
+            context.Users.Add(new Models.User
+            {
+                Id = "1",
+                Email = "a",
+                Password = "a",              
+                FirstName = "Angular",
+                LastName = "Ng"
+            });
+
             context.SaveChanges();
         }
     }
