@@ -32,7 +32,7 @@ namespace MessageBoardBackend.Controllers
             var newMessage = context.Messages.Add(message).Entity;
             context.SaveChanges();
 
-            return message;
+            return newMessage;
         }
     }
 }
