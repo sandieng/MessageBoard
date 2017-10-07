@@ -1,50 +1,38 @@
-using MessageBoardBackend.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 
 namespace MessageBoardBackend.Controllers
 {
+    public class JwtPacket
+    {
+        public string Token { get; set; }
+        public string FirstName { get; set; }
+    }
+
+    public class LoginData
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
     [Produces("application/json")]
-    [Route("Auth")]
+    [Route("auth")]
     public class AuthController : Controller
     {
-        private readonly ApiContext context;
-
-        public class JwtPacket
-        {
-            public string Token { get; set; }
-            public string FirstName { get; set; }
-        }
-
-        public class LoginData
-        {
-            public string Email { get; set; }
-            public string Password { get; set; }
-        }
-
+        readonly ApiContext context;
 
         public AuthController(ApiContext context)
         {
             this.context = context;
         }
-
-        [HttpPost("register")]
-        public JwtPacket Register([FromBody] User user)
-        {
-            context.Users.Add(user);
-            context.SaveChanges();
-
-            var jwt = new JwtSecurityToken();
-            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
-
-            return CreateJwtPacket(user);
-        }
-
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginData loginData)
         {
-            var user = context.Users.SingleOrDefault(x => x.Email == loginData.Email && x.Password == loginData.Password);
+            var user = context.Users.SingleOrDefault(u => u.Email == loginData.Email && u.Password == loginData.Password);
 
             if (user == null)
                 return NotFound("email or password incorrect");
@@ -52,16 +40,32 @@ namespace MessageBoardBackend.Controllers
             return Ok(CreateJwtPacket(user));
         }
 
-        private JwtPacket CreateJwtPacket(User user)
+        [HttpPost("register")]
+        public JwtPacket Register([FromBody]Models.User user)
         {
-            var jwt = new JwtSecurityToken();
+            context.Users.Add(user);
+            context.SaveChanges();
+
+            return CreateJwtPacket(user);
+        }
+
+        JwtPacket CreateJwtPacket(Models.User user)
+        {
+            var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("this is the secret phrase"));
+
+            var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new Claim[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id)
+            };
+
+            var jwt = new JwtSecurityToken(claims: claims, signingCredentials: signingCredentials);
+
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
-            return new JwtPacket
-            {
-                Token = encodedJwt,
-                FirstName = user.FirstName
-            };
+            return new JwtPacket() { Token = encodedJwt, FirstName = user.FirstName };
+
         }
     }
 }

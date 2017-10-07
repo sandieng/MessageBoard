@@ -1,15 +1,12 @@
-﻿using MessageBoardBackend.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace MessageBoardBackend
 {
     public class ApiContext : DbContext
     {
-        public ApiContext(DbContextOptions<ApiContext> options) : base(options)
-        {
-        }
+        public ApiContext(DbContextOptions<ApiContext> options) : base(options) { }
 
-        public DbSet<Message> Messages { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<Models.Message> Messages { get; set; }
+        public DbSet<Models.User> Users { get; set; }
     }
 }

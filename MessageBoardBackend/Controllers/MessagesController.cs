@@ -8,8 +8,8 @@ namespace MessageBoardBackend.Controllers
     [Route("api/Messages")]
     public class MessagesController : Controller
     {
-        private readonly ApiContext context;
-        
+        readonly ApiContext context;
+
         public MessagesController(ApiContext context)
         {
             this.context = context;
@@ -23,16 +23,15 @@ namespace MessageBoardBackend.Controllers
         [HttpGet("{name}")]
         public IEnumerable<Models.Message> Get(string name)
         {
-            return context.Messages.Where(x => x.Owner == name);
+            return context.Messages.Where(message => message.Owner == name);
         }
 
         [HttpPost]
         public Models.Message Post([FromBody] Models.Message message)
         {
-            var newMessage = context.Messages.Add(message).Entity;
+            var dbMessage = context.Messages.Add(message).Entity;
             context.SaveChanges();
-
-            return newMessage;
+            return dbMessage;
         }
     }
 }

@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MessageBoardBackend
 {
@@ -26,6 +28,7 @@ namespace MessageBoardBackend
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
+
             services.AddDbContext<ApiContext>(opt => opt.UseInMemoryDatabase());
 
             services.AddCors(options => options.AddPolicy("Cors", builder =>
@@ -35,6 +38,27 @@ namespace MessageBoardBackend
                 .AllowAnyMethod()
                 .AllowAnyHeader();
             }));
+
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("this is the secret phrase"));
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer( cfg =>
+            {
+                cfg.RequireHttpsMetadata = false;
+                cfg.SaveToken = true;
+                cfg.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    IssuerSigningKey = signingKey,
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true
+                };
+            });
+
             services.AddMvc();
         }
 
@@ -43,6 +67,9 @@ namespace MessageBoardBackend
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+
+            app.UseAuthentication();
+
             app.UseCors("Cors");
             app.UseMvc();
 
@@ -62,14 +89,7 @@ namespace MessageBoardBackend
                 Text = "Hi"
             });
 
-            context.Users.Add(new Models.User
-            {
-                Id = "1",
-                Email = "a",
-                Password = "a",              
-                FirstName = "Angular",
-                LastName = "Ng"
-            });
+            context.Users.Add(new Models.User { Email = "a", FirstName = "Tim", Password = "a" });
 
             context.SaveChanges();
         }
